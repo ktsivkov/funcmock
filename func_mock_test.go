@@ -16,11 +16,19 @@ var ExampleError = errors.New("test")
 
 type TestFuncTypeNoArgumentsNoOuts func()
 
+var ImplTestFuncTypeNoArgumentsNoOuts TestFuncTypeNoArgumentsNoOuts
+
 type TestFuncTypeArgumentsNoOuts func(a, b string)
+
+var ImplTestFuncTypeArgumentsNoOuts TestFuncTypeArgumentsNoOuts
 
 type TestFuncTypeNoArgumentsOuts func() (string, error)
 
+var ImplTestFuncTypeNoArgumentsOuts TestFuncTypeNoArgumentsOuts
+
 type TestFuncTypeArgumentsOuts func(a, b string) (string, error)
+
+var ImplTestFuncTypeArgumentsOuts TestFuncTypeArgumentsOuts
 
 func TestFor(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
@@ -37,72 +45,160 @@ func TestFor(t *testing.T) {
 	})
 }
 
+func TestAs(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			assert.IsType(t, &funcmock.Builder[TestFuncTypeNoArgumentsNoOuts]{}, funcmock.As(ImplTestFuncTypeNoArgumentsNoOuts))
+		})
+	})
+	t.Run("fail", func(t *testing.T) {
+		t.Run("not a func", func(t *testing.T) {
+			assert.Panics(t, func() {
+				var x int
+				funcmock.As(x)
+			})
+		})
+	})
+}
+
 func TestBuilder_Build(t *testing.T) {
-	t.Run("with no arguments and with no outputs", func(t *testing.T) {
-		funcMock := funcmock.For[TestFuncTypeNoArgumentsNoOuts]()
-		funcMock.On().Return()
-
-		fn := funcMock.Build()
-		assert.NotPanics(t, func() {
-			fn()
-		})
-	})
-	t.Run("with arguments and with no outputs", func(t *testing.T) {
-		funcMock := funcmock.For[TestFuncTypeArgumentsNoOuts]()
-		funcMock.On("a", "b").Return()
-
-		fn := funcMock.Build()
-		assert.NotPanics(t, func() {
-			fn("a", "b")
-		})
-	})
-	t.Run("with no arguments and with outputs", func(t *testing.T) {
-		t.Run("with no error", func(t *testing.T) {
-			funcMock := funcmock.For[TestFuncTypeNoArgumentsOuts]()
-			funcMock.On().Return("test", nil)
+	t.Run("using for", func(t *testing.T) {
+		t.Run("with no arguments and with no outputs", func(t *testing.T) {
+			funcMock := funcmock.For[TestFuncTypeNoArgumentsNoOuts]()
+			funcMock.On().Return()
 
 			fn := funcMock.Build()
 			assert.NotPanics(t, func() {
-				res, err := fn()
-				assert.NoError(t, err)
-				assert.Equal(t, "test", res)
+				fn()
 			})
 		})
-
-		t.Run("with error", func(t *testing.T) {
-			funcMock := funcmock.For[TestFuncTypeNoArgumentsOuts]()
-			funcMock.On().Return("test", ExampleError)
+		t.Run("with arguments and with no outputs", func(t *testing.T) {
+			funcMock := funcmock.For[TestFuncTypeArgumentsNoOuts]()
+			funcMock.On("a", "b").Return()
 
 			fn := funcMock.Build()
 			assert.NotPanics(t, func() {
-				res, err := fn()
-				assert.ErrorIs(t, err, ExampleError)
-				assert.Equal(t, "test", res)
+				fn("a", "b")
+			})
+		})
+		t.Run("with no arguments and with outputs", func(t *testing.T) {
+			t.Run("with no error", func(t *testing.T) {
+				funcMock := funcmock.For[TestFuncTypeNoArgumentsOuts]()
+				funcMock.On().Return("test", nil)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn()
+					assert.NoError(t, err)
+					assert.Equal(t, "test", res)
+				})
+			})
+
+			t.Run("with error", func(t *testing.T) {
+				funcMock := funcmock.For[TestFuncTypeNoArgumentsOuts]()
+				funcMock.On().Return("test", ExampleError)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn()
+					assert.ErrorIs(t, err, ExampleError)
+					assert.Equal(t, "test", res)
+				})
+			})
+		})
+		t.Run("with arguments and with outputs", func(t *testing.T) {
+			t.Run("with no error", func(t *testing.T) {
+				funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+				funcMock.On("1", "2").Return("1 2", nil)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn("1", "2")
+					assert.NoError(t, err)
+					assert.Equal(t, "1 2", res)
+				})
+			})
+			t.Run("with error", func(t *testing.T) {
+				funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+				defer funcMock.AssertNumberOfCalls(t, 1)
+				funcMock.On("1", "2").Return("1 2", ExampleError)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn("1", "2")
+					assert.ErrorIs(t, err, ExampleError)
+					assert.Equal(t, "1 2", res)
+				})
 			})
 		})
 	})
-	t.Run("with arguments and with outputs", func(t *testing.T) {
-		t.Run("with no error", func(t *testing.T) {
-			funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-			funcMock.On("1", "2").Return("1 2", nil)
+	t.Run("using as", func(t *testing.T) {
+		t.Run("with no arguments and with no outputs", func(t *testing.T) {
+			funcMock := funcmock.As(ImplTestFuncTypeNoArgumentsNoOuts)
+			funcMock.On().Return()
 
 			fn := funcMock.Build()
 			assert.NotPanics(t, func() {
-				res, err := fn("1", "2")
-				assert.NoError(t, err)
-				assert.Equal(t, "1 2", res)
+				fn()
 			})
 		})
-		t.Run("with error", func(t *testing.T) {
-			funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-			defer funcMock.AssertNumberOfCalls(t, 1)
-			funcMock.On("1", "2").Return("1 2", ExampleError)
+		t.Run("with arguments and with no outputs", func(t *testing.T) {
+			funcMock := funcmock.As(ImplTestFuncTypeArgumentsNoOuts)
+			funcMock.On("a", "b").Return()
 
 			fn := funcMock.Build()
 			assert.NotPanics(t, func() {
-				res, err := fn("1", "2")
-				assert.ErrorIs(t, err, ExampleError)
-				assert.Equal(t, "1 2", res)
+				fn("a", "b")
+			})
+		})
+		t.Run("with no arguments and with outputs", func(t *testing.T) {
+			t.Run("with no error", func(t *testing.T) {
+				funcMock := funcmock.As(ImplTestFuncTypeNoArgumentsOuts)
+				funcMock.On().Return("test", nil)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn()
+					assert.NoError(t, err)
+					assert.Equal(t, "test", res)
+				})
+			})
+
+			t.Run("with error", func(t *testing.T) {
+				funcMock := funcmock.As(ImplTestFuncTypeNoArgumentsOuts)
+				funcMock.On().Return("test", ExampleError)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn()
+					assert.ErrorIs(t, err, ExampleError)
+					assert.Equal(t, "test", res)
+				})
+			})
+		})
+		t.Run("with arguments and with outputs", func(t *testing.T) {
+			t.Run("with no error", func(t *testing.T) {
+				funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+				funcMock.On("1", "2").Return("1 2", nil)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn("1", "2")
+					assert.NoError(t, err)
+					assert.Equal(t, "1 2", res)
+				})
+			})
+			t.Run("with error", func(t *testing.T) {
+				funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+				defer funcMock.AssertNumberOfCalls(t, 1)
+				funcMock.On("1", "2").Return("1 2", ExampleError)
+
+				fn := funcMock.Build()
+				assert.NotPanics(t, func() {
+					res, err := fn("1", "2")
+					assert.ErrorIs(t, err, ExampleError)
+					assert.Equal(t, "1 2", res)
+				})
 			})
 		})
 	})
@@ -115,13 +211,24 @@ func TestBuilder_On(t *testing.T) {
 		expectedOut = "a"
 		expectedErr = errors.New("test")
 	)
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
 
-	fn := funcMock.Build()
-	res, err := fn(givenArg1, givenArg2)
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Equal(t, expectedOut, res)
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
 }
 
 func TestBuilder_AssertCalled(t *testing.T) {
@@ -131,14 +238,26 @@ func TestBuilder_AssertCalled(t *testing.T) {
 		expectedOut = "a"
 		expectedErr = errors.New("test")
 	)
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
-	defer funcMock.AssertCalled(t, givenArg1, givenArg2)
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertCalled(t, givenArg1, givenArg2)
 
-	fn := funcMock.Build()
-	res, err := fn(givenArg1, givenArg2)
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Equal(t, expectedOut, res)
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertCalled(t, givenArg1, givenArg2)
+
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
 }
 
 func TestBuilder_AssertNotCalled(t *testing.T) {
@@ -148,14 +267,26 @@ func TestBuilder_AssertNotCalled(t *testing.T) {
 		expectedOut = "a"
 		expectedErr = errors.New("test")
 	)
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
-	defer funcMock.AssertNotCalled(t, givenArg2, givenArg1)
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertNotCalled(t, givenArg2, givenArg1)
 
-	fn := funcMock.Build()
-	res, err := fn(givenArg1, givenArg2)
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Equal(t, expectedOut, res)
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertNotCalled(t, givenArg2, givenArg1)
+
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
 }
 
 func TestBuilder_AssertNumberOfCalls(t *testing.T) {
@@ -165,14 +296,26 @@ func TestBuilder_AssertNumberOfCalls(t *testing.T) {
 		expectedOut = "a"
 		expectedErr = errors.New("test")
 	)
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
-	defer funcMock.AssertNumberOfCalls(t, 1)
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertNumberOfCalls(t, 1)
 
-	fn := funcMock.Build()
-	res, err := fn(givenArg1, givenArg2)
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Equal(t, expectedOut, res)
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertNumberOfCalls(t, 1)
+
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
 }
 
 func TestBuilder_AssertExpectations(t *testing.T) {
@@ -182,54 +325,112 @@ func TestBuilder_AssertExpectations(t *testing.T) {
 		expectedOut = "a"
 		expectedErr = errors.New("test")
 	)
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
-	defer funcMock.AssertExpectations(t)
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertExpectations(t)
 
-	fn := funcMock.Build()
-	res, err := fn(givenArg1, givenArg2)
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Equal(t, expectedOut, res)
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On(givenArg1, givenArg2).Return(expectedOut, expectedErr)
+		defer funcMock.AssertExpectations(t)
+
+		fn := funcMock.Build()
+		res, err := fn(givenArg1, givenArg2)
+		assert.ErrorIs(t, err, expectedErr)
+		assert.Equal(t, expectedOut, res)
+	})
 }
 
 func TestBuilder_String(t *testing.T) {
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	assert.Equal(t, funcMock.String(), reflect.TypeFor[TestFuncTypeArgumentsOuts]().String())
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		assert.Equal(t, funcMock.String(), reflect.TypeFor[TestFuncTypeArgumentsOuts]().String())
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		assert.Equal(t, funcMock.String(), reflect.TypeFor[TestFuncTypeArgumentsOuts]().String())
+	})
 }
 
 func TestBuilder_TestData(t *testing.T) {
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	assert.IsType(t, objx.Map{}, funcMock.TestData())
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		assert.IsType(t, objx.Map{}, funcMock.TestData())
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		assert.IsType(t, objx.Map{}, funcMock.TestData())
+	})
 }
 
 func TestBuilder_IsCallable(t *testing.T) {
-	t.Run("true", func(t *testing.T) {
-		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-		funcMock.On("a", "b").Return("a", ExampleError)
-		assert.True(t, funcMock.IsCallable(t, "a", "b"))
+	t.Run("using for", func(t *testing.T) {
+		t.Run("true", func(t *testing.T) {
+			funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+			funcMock.On("a", "b").Return("a", ExampleError)
+			assert.True(t, funcMock.IsCallable(t, "a", "b"))
+		})
+		t.Run("false", func(t *testing.T) {
+			funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+			assert.False(t, funcMock.IsCallable(t, "a", "b"))
+		})
 	})
-	t.Run("false", func(t *testing.T) {
-		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-		assert.False(t, funcMock.IsCallable(t, "a", "b"))
+	t.Run("using as", func(t *testing.T) {
+		t.Run("true", func(t *testing.T) {
+			funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+			funcMock.On("a", "b").Return("a", ExampleError)
+			assert.True(t, funcMock.IsCallable(t, "a", "b"))
+		})
+		t.Run("false", func(t *testing.T) {
+			funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+			assert.False(t, funcMock.IsCallable(t, "a", "b"))
+		})
 	})
 }
 
 func TestBuilder_Called(t *testing.T) {
 	out1, out2 := "a", ExampleError
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.On("a", "b").Return(out1, out2)
-	assert.Equal(t, funcMock.Called("a", "b"), mock.Arguments{out1, out2})
+	t.Run("using for", func(t *testing.T) {
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.On("a", "b").Return(out1, out2)
+		assert.Equal(t, funcMock.Called("a", "b"), mock.Arguments{out1, out2})
+	})
+	t.Run("using as", func(t *testing.T) {
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.On("a", "b").Return(out1, out2)
+		assert.Equal(t, funcMock.Called("a", "b"), mock.Arguments{out1, out2})
+	})
 }
 
 func TestBuilder_Test(t *testing.T) {
-	tt := &mockT{}
-	tt.On("Errorf", mock.Anything, mock.Anything)
-	tt.On("FailNow")
-	defer tt.AssertExpectations(t)
+	t.Run("using for", func(t *testing.T) {
+		tt := &mockT{}
+		tt.On("Errorf", mock.Anything, mock.Anything)
+		tt.On("FailNow")
+		defer tt.AssertExpectations(t)
 
-	funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
-	funcMock.Test(tt)
-	assert.PanicsWithValue(t, examplePanicMessage, func() {
-		funcMock.Called("a", "b")
+		funcMock := funcmock.For[TestFuncTypeArgumentsOuts]()
+		funcMock.Test(tt)
+		assert.PanicsWithValue(t, examplePanicMessage, func() {
+			funcMock.Called("a", "b")
+		})
+	})
+	t.Run("using as", func(t *testing.T) {
+		tt := &mockT{}
+		tt.On("Errorf", mock.Anything, mock.Anything)
+		tt.On("FailNow")
+		defer tt.AssertExpectations(t)
+
+		funcMock := funcmock.As(ImplTestFuncTypeArgumentsOuts)
+		funcMock.Test(tt)
+		assert.PanicsWithValue(t, examplePanicMessage, func() {
+			funcMock.Called("a", "b")
+		})
 	})
 }
