@@ -18,6 +18,17 @@ func For[T any]() *Builder[T] {
 	}
 }
 
+func As[T any](_ T) *Builder[T] {
+	typ := reflect.TypeFor[T]()
+	if typ == nil || typ.Kind() != reflect.Func {
+		panic("type must be a function")
+	}
+
+	return &Builder[T]{
+		mock: mock.Mock{},
+	}
+}
+
 type Builder[T any] struct {
 	mock mock.Mock
 }
