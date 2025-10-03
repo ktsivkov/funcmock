@@ -1,6 +1,6 @@
 MockFunc - Overview and Disclaimer
 ========
-[![Build Status](https://github.com/ktsivkov/funcmock/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/stretchr/testify/actions/workflows/main.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/ktsivkov/funcmock)](https://goreportcard.com/report/github.com/stretchr/testify) [![PkgGoDev](https://pkg.go.dev/badge/github.com/ktsivkov/funcmock)](https://pkg.go.dev/github.com/stretchr/testify)
+[![Build Status](https://github.com/ktsivkov/funcmock/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/ktsivkov/funcmock/actions/workflows/go.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/ktsivkov/funcmock)](https://goreportcard.com/report/github.com/ktsivkov/funcmock) [![PkgGoDev](https://pkg.go.dev/badge/github.com/ktsivkov/funcmock)](https://pkg.go.dev/github.com/ktsivkov/funcmock)
 
 > This is a wrapper around `github.com/stretchr/testify` package.
 > 
