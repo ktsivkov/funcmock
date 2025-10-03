@@ -8,7 +8,7 @@ MockFunc - Overview and Disclaimer
 > 
 > We only aim to cover the most common use cases of function mocking.
 > 
-> At the moment we support GoLang versions >= 1.20.
+> At the moment we support GoLang versions >= 1.22.
 
 Installation
 ============
